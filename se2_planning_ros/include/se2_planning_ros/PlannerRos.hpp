@@ -19,6 +19,10 @@ class PlannerRos : public Planner {
   void setGoalState(const State& goalState) override;
   bool plan() override;
   void getPath(Path* path) const override;
+  //!Eric_Wang:
+  ompl::geometric::PathGeometric getOmplPath() const override;
+  void getOmplPath(ompl::geometric::PathGeometric* omplPath) const override;
+  void getOmplInterpolatedPath(ompl::geometric::PathGeometric* omplPath, double spatialResolution) const override;
   bool reset() override;
   bool initialize() override;
   void getStartingState(State* startingState) override;

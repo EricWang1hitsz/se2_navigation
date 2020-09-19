@@ -10,6 +10,7 @@
 #include "se2_planning/State.hpp"
 
 #include <boost/concept_check.hpp>
+#include <ompl/geometric/PathGeometric.h>
 namespace se2_planning {
 
 class Planner {
@@ -21,6 +22,10 @@ class Planner {
   virtual void setGoalState(const State& goalState) = 0;
   virtual bool plan() = 0;
   virtual void getPath(Path* path) const = 0;
+  //!Eric_Wang:
+  virtual ompl::geometric::PathGeometric getOmplPath() const = 0;
+  virtual void getOmplPath(ompl::geometric::PathGeometric* omplPath) const = 0;
+  virtual void getOmplInterpolatedPath(ompl::geometric::PathGeometric* omplPath, double spatialResolution) const = 0;
 
   virtual bool reset() { throw std::runtime_error("Planner: reset() not implemented"); }
   virtual bool initialize() { throw std::runtime_error("Planner: initialize() not implemented"); }

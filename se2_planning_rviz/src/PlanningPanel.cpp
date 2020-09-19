@@ -59,6 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 #include "se2_navigation_msgs/RequestCurrentStateSrv.h"
 #include "se2_navigation_msgs/ControllerCommand.hpp"
 #include "se2_navigation_msgs/SendControllerCommandSrv.h"
+#include "se2_navigation_msgs/RequestNavigationMapSrv.h"
 
 #include <thread>
 
@@ -67,8 +68,10 @@ namespace se2_planning_rviz {
 template<typename Req, typename Res>
 bool callService(Req& req, Res& res, const std::string& serviceName)
 {
+  ROS_WARN("Call service Once ");
   try {
     // ROS_DEBUG_STREAM("Service name: " << service_name);
+    ROS_WARN_STREAM("Service name: " << serviceName);
     if (!ros::service::call(serviceName, req, res)) {
       ROS_WARN_STREAM("Couldn't call service: " << serviceName);
       return false;
@@ -114,9 +117,14 @@ void PlanningPanel::createLayout()
   planningServiceNameEditor_ = new QLineEdit;
   controllerCommandTopicEditor_ = new QLineEdit;
   currStateServiceEditor_ = new QLineEdit;
+  navigationMapPathEditor_ = new QLineEdit;
+  navigationMapTopicEditor_ = new QLineEdit;
   topic_layout->addRow(new QLabel(tr("Ctrl command topic:")), controllerCommandTopicEditor_);
   topic_layout->addRow(new QLabel(tr("Planning service:")), planningServiceNameEditor_);
   topic_layout->addRow(new QLabel(tr("Curr State Service:")), currStateServiceEditor_);
+  // Strive4G8ness: load navigation map.
+  topic_layout->addRow(new QLabel(tr("Navigation map path:")), navigationMapPathEditor_);
+  topic_layout->addRow(new QLabel(tr("Navigation map topic:")), navigationMapTopicEditor_);
   formGroupBox->setLayout(topic_layout);
 
   // Start and goal poses.
@@ -154,18 +162,27 @@ void PlanningPanel::createLayout()
 
   // Planner services and publications.
   QHBoxLayout* service_layout = new QHBoxLayout;
+  QHBoxLayout* service_layout2 = new QHBoxLayout;
   plan_request_button_ = new QPushButton("Request Plan");
   tracking_command_button_ = new QPushButton("Start Tracking");
   stop_command_button_ = new QPushButton("Stop Tracking");
+  // Strive4G8ness:
+  load_global_map_button_ = new QPushButton("Load Map");
+  map_fusion_button_ = new QPushButton("Map Fusion");
+  check_path_validity_button_ = new QPushButton("Check Path Validity");
   service_layout->addWidget(plan_request_button_);
   service_layout->addWidget(tracking_command_button_);
   service_layout->addWidget(stop_command_button_);
+  service_layout2->addWidget(load_global_map_button_);
+  service_layout2->addWidget(map_fusion_button_);
+  service_layout2->addWidget(check_path_validity_button_);
 
   // First the names, then the start/goal, then service buttons.
   QVBoxLayout* layout = new QVBoxLayout;
   layout->addWidget(formGroupBox);
   layout->addLayout(start_goal_layout);
   layout->addLayout(service_layout);
+  layout->addLayout(service_layout2);
   setLayout(layout);
 
   //set the default parameters
@@ -178,9 +195,16 @@ void PlanningPanel::createLayout()
           SLOT(updatePathRequestTopic()));
   connect(currStateServiceEditor_, SIGNAL(editingFinished()), this,
           SLOT(updateGetCurrentStateService()));
+  // Strive4G8ness: connect qt and data.
+  connect(navigationMapPathEditor_, SIGNAL(editingFinished()), this,
+          SLOT(updateGetNavigationMapPath()));
+  connect(navigationMapTopicEditor_, SIGNAL(editingFinished()), this,
+          SLOT(updateGetNavigationMapTopic()));
   connect(plan_request_button_, SIGNAL(released()), this, SLOT(callPlanningService()));
   connect(tracking_command_button_, SIGNAL(released()), this, SLOT(callPublishTrackingCommand()));
   connect(stop_command_button_, SIGNAL(released()), this, SLOT(callPublishStopTrackingCommand()));
+  connect(load_global_map_button_, SIGNAL(released()), this, SLOT(callLoadGlobalMapService()));
+  connect(map_fusion_button_, SIGNAL(released()), this, SLOT(callMapFusionService()));
 }
 
 void PlanningPanel::updateControllerCommandTopic()
@@ -222,6 +246,33 @@ void PlanningPanel::setPathRequestTopic(const QString& newPathRequestTopicName)
     planningServiceName_ = newPathRequestTopicName;
     Q_EMIT configChanged();
   }
+}
+
+// Strive4G8ness: update navigation map path and topic infos.
+void PlanningPanel::updateGetNavigationMapPath()
+{
+    setNavigationMapPath(navigationMapPathEditor_->text());
+}
+
+void PlanningPanel::updateGetNavigationMapTopic()
+{
+    setNavigationMapTopic(navigationMapTopicEditor_->text());
+}
+
+void PlanningPanel::setNavigationMapPath(const QString &newNavigationMapPath)
+{
+    if(newNavigationMapPath != navigationMapPathName_){
+        navigationMapPathName_ = newNavigationMapPath;
+    }
+    Q_EMIT configChanged();
+}
+
+void PlanningPanel::setNavigationMapTopic(const QString &newNavigationMapTopic)
+{
+    if(newNavigationMapTopic != navigationMapTopicName_){
+        navigationMapTopicName_ = newNavigationMapTopic;
+    }
+    Q_EMIT configChanged();
 }
 
 void PlanningPanel::startEditing(const std::string& id)
@@ -294,6 +345,8 @@ rviz::Panel::save(config);
 config.mapSetValue("path_request_topic", planningServiceName_);
 config.mapSetValue("get_current_state_service", currentStateServiceName_);
 config.mapSetValue("controller_command_topic", controllerCommandTopicName_);
+config.mapSetValue("navigation_map_path", navigationMapPathName_);
+config.mapSetValue("navigation_map_topic", navigationMapTopicName_);
 }
 
 // Load all configuration data for this panel from the given Config object.
@@ -311,6 +364,14 @@ currStateServiceEditor_->setText(currentStateServiceName_);
 
 if (config.mapGetString("controller_command_topic", &controllerCommandTopicName_)) {
 controllerCommandTopicEditor_->setText(controllerCommandTopicName_);
+}
+
+if (config.mapGetString("navigation_map_path", &navigationMapPathName_)) {
+navigationMapPathEditor_->setText(navigationMapPathName_);
+}
+
+if (config.mapGetString("navigation_map_topic", &navigationMapTopicName_)) {
+navigationMapTopicEditor_->setText(navigationMapTopicName_);
 }
 
 }
@@ -368,6 +429,40 @@ callService(req,res,service_name);
 
 t.detach();
 
+}
+
+// Strive4G8ness:
+void PlanningPanel::callLoadGlobalMapService()
+{
+    std::thread t([this] {
+
+    se2_navigation_msgs::RequestNavigationMapSrv::Request req;
+    se2_navigation_msgs::RequestNavigationMapSrv::Response res;
+    std::string mapPath = navigationMapPathName_.toStdString();
+    std::string mapTopic = navigationMapTopicName_.toStdString();
+    // Strive4G8ness: define service name, req and res.
+    req.file_path = mapPath;
+    req.topic_name = mapTopic;
+    std::string service_name = "load_global_map"; //todo.
+
+    callService(req, res, service_name);
+});
+
+    t.detach();
+}
+
+void PlanningPanel::callMapFusionService()
+{
+    std::thread t([this] {
+    std_srvs::SetBool::Request req;
+    std_srvs::SetBool::Response res;
+    req.data = true;
+    std::string service_name = "map_fusion";
+
+    callService(req, res, service_name);
+    });
+
+    t.detach();
 }
 
 void PlanningPanel::getStartPoseFromWidget(geometry_msgs::Pose *startPoint)

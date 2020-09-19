@@ -8,10 +8,12 @@
 #include "se2_planning/GridMapStateValidator.hpp"
 
 #include "grid_map_core/iterators/PolygonIterator.hpp"
+#include <ros/ros.h>
 
 namespace se2_planning {
 
 bool GridMapStateValidator::isStateValid(const State& state) const {
+  ROS_INFO("Grid Map State!!!");
   if (!isInitialized()) {
     return true;
   } /* Optimistic and assumes no obstacles */

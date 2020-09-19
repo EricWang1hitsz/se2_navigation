@@ -12,6 +12,7 @@
 #include <random>
 
 #include "grid_map_core/iterators/PolygonIterator.hpp"
+#include <ros/ros.h>
 
 namespace se2_planning {
 
@@ -58,6 +59,7 @@ bool GridMapLazyStateValidator::isInitialized() const {
 }
 
 bool GridMapLazyStateValidator::isStateValid(const State& state) const {
+  ROS_INFO("Grid Map Lazy State!!!");
   if (!isInitialized()) {
     return true;
   } /* Optimistic and assumes no obstacles */

@@ -39,7 +39,7 @@ struct OmplReedsSheppPlannerParameters {
   double xUpperBound_ = 1000.0;
   double yLowerBound_ = -1000.0;
   double yUpperBound_ = 1000.0;
-  double pathSpatialResolution_ = 0.05;
+  double pathSpatialResolution_ = 1.5;
   double maxPlanningTime_ = 1.0;
   std::string omplPlannerName_ = "RRTstar";
 };

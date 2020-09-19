@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
   ros::NodeHandlePtr nh(new ros::NodeHandle("~"));
 
   std::string filename = nh->param<std::string>("/ompl_planner_ros/parameter_path", "ompl_rs_planner_ros/nav_msgs_path");
-  const auto plannerParameters = loadOmplReedsSheppPlannerParameters(filename);
+  const auto plannerParameters = loadOmplReedsSheppPlannerParameters(filename); //state space and planner.
   const auto plannerRosParameters = loadOmplReedsSheppPlannerRosParameters(filename);
   auto planner = std::make_shared<OmplReedsSheppPlanner>();
   planner->setParameters(plannerParameters);

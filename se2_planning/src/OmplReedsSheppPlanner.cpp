@@ -39,6 +39,9 @@ bool OmplReedsSheppPlanner::initialize() {
   simpleSetup_->setPlanner(planner);
   ompl::base::OptimizationObjectivePtr optimizationObjective(std::make_shared<ompl::base::PathLengthOptimizationObjective>(si));
   simpleSetup_->setOptimizationObjective(optimizationObjective);
+  // Strive4G8ness: add optimazation objective.
+  ompl::base::OptimizationObjectivePtr optimazationObjective2(std::make_shared<ompl::base::motionCostIntegralObjective>(si,false));
+  simpleSetup_->setOptimizationObjective(optimazationObjective2);
   return true;
 }
 
@@ -48,7 +51,8 @@ void OmplReedsSheppPlanner::initializeStateSpace() {
 }
 
 void OmplReedsSheppPlanner::createDefaultStateSpace() {
-  stateSpace_.reset(new ompl::base::ReedsSheppStateSpace(parameters_.turningRadius_));
+  stateSpace_.reset(new ompl::base::SE2StateSpace());
+  //stateSpace_.reset(new ompl::base::ReedsSheppStateSpace(parameters_.turningRadius_)); // Reeds shepp state space.
   bounds_ = std::make_unique<ompl::base::RealVectorBounds>(reedsSheppStateSpaceDim_);
   setStateSpaceBoundaries();
 }
@@ -76,6 +80,7 @@ const StateValidator& OmplReedsSheppPlanner::getStateValidator() const {
 bool OmplReedsSheppPlanner::isStateValid(const ompl::base::SpaceInformation* si, const ompl::base::State* state) {
   const ReedsSheppState rsState = se2_planning::convert(state);
   return stateValidator_->isStateValid(rsState);
+    return true;
 }
 ompl::base::ScopedStatePtr OmplReedsSheppPlanner::convert(const State& state) const {
   ompl::base::ScopedStatePtr stateOmpl(std::make_shared<ompl::base::ScopedState<> >(stateSpace_));

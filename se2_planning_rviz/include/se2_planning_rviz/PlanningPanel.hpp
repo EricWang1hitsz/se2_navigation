@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef Q_MOC_RUN
 #include <ros/ros.h>
+#include <std_srvs/SetBool.h>
 #include <rviz/panel.h>
 #include "se2_planning_rviz/PoseWidget.hpp"
 #include "se2_planning_rviz/PlanningInteractiveMarkers.hpp"
@@ -94,6 +95,9 @@ class PlanningPanel : public rviz::Panel {
   void updateControllerCommandTopic();
   void updatePathRequestTopic();
   void updateGetCurrentStateService();
+  // Strive4G8ness:
+  void updateGetNavigationMapPath();
+  void updateGetNavigationMapTopic();
   void startEditing(const std::string& id);
   void finishEditing(const std::string& id);
   void widgetPoseUpdated(const std::string& id,
@@ -102,13 +106,17 @@ class PlanningPanel : public rviz::Panel {
   void callPlanningService();
   void callPublishTrackingCommand();
   void callPublishStopTrackingCommand();
-
+  // Strive4G8ness: call load map service.
+  void callLoadGlobalMapService();
+  void callMapFusionService();
  protected:
   // Set up the layout, only called by the constructor.
   void createLayout();
   void setControllerCommandTopic(const QString& newControllerCommandTopic);
   void setPathRequestTopic(const QString &newPathRequestTopic);
   void setGetCurrentStateService(const QString &newCurrentStateService);
+  void setNavigationMapPath(const QString &newNavigationMapPath);
+  void setNavigationMapTopic(const QString &newNavigationMapTopic);
 
   void getStartPoseFromWidget(geometry_msgs::Pose *startPoint);
   void getStartPoseFromService(geometry_msgs::Pose *startPoint);
@@ -121,11 +129,18 @@ class PlanningPanel : public rviz::Panel {
   QLineEdit* controllerCommandTopicEditor_;
   QLineEdit* planningServiceNameEditor_;
   QLineEdit* currStateServiceEditor_;
+  // Strive4G8ness:
+  QLineEdit* navigationMapPathEditor_;
+  QLineEdit* navigationMapTopicEditor_;
   PoseWidget* start_pose_widget_;
   PoseWidget* goal_pose_widget_;
   QPushButton* plan_request_button_;
   QPushButton* tracking_command_button_;
   QPushButton* stop_command_button_;
+  // Strive4G8ness: button
+  QPushButton* load_global_map_button_;
+  QPushButton* map_fusion_button_;
+  QPushButton* check_path_validity_button_;
   QCheckBox *currentStateAsStartCheckBox_;
 
 
@@ -139,6 +154,9 @@ class PlanningPanel : public rviz::Panel {
   QString controllerCommandTopicName_;
   QString planningServiceName_;
   QString currentStateServiceName_;
+  // Strive4G8ness:
+  QString navigationMapPathName_;
+  QString navigationMapTopicName_;
 
   // Other state:
   std::string currently_editing_;

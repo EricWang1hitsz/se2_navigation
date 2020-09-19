@@ -29,7 +29,7 @@ void OmplPlanner::setGoalState(const State& goalState) {
 }
 
 void OmplPlanner::getPath(Path* path) const {
-  convert(*interpolatedPath_, path);
+  convert(*interpolatedPath_, path); // convert into rs path.
 }
 
 bool OmplPlanner::plan() {
@@ -41,8 +41,8 @@ bool OmplPlanner::plan() {
   }
 
   const ompl::geometric::PathGeometric solution = simpleSetup_->getSolutionPath();
-  *path_ = solution;
-  *interpolatedPath_ = solution;
+  *path_ = solution; // PathGeometric so far.
+  *interpolatedPath_ = solution; // Not interpolate so far.
   // std::cout << "Solution plan has: " << solution.getStateCount() << " states." << std::endl;
 
   return true;
@@ -52,6 +52,7 @@ bool OmplPlanner::reset() {
   return true;
 }
 bool OmplPlanner::initialize() {
+  ROS_INFO("Initialize Planner");
   initializeStateSpace();
   if (stateSpace_ == nullptr) {
     std::cerr << "OmplPlanner:: state space is nullptr" << std::endl;
@@ -61,7 +62,8 @@ bool OmplPlanner::initialize() {
   ompl::base::SpaceInformationPtr si = simpleSetup_->getSpaceInformation();
   auto checker = [this, si](const ompl::base::State* state) { return this->isStateValid(si.get(), state); };
   simpleSetup_->setStateValidityChecker(checker);
-  path_ = std::make_unique<ompl::geometric::PathGeometric>(si);
+  // Strive4G8ness: don't add optimazation objective here.
+  path_ = std::make_unique<ompl::geometric::PathGeometric>(si); // initilize, or has error.
   interpolatedPath_ = std::make_unique<ompl::geometric::PathGeometric>(si);
   return true;
 }
@@ -70,6 +72,10 @@ void OmplPlanner::setMaxPlanningDuration(double T) {
   maxPlanningDuration_ = T;
 }
 
+// Strive4G8ness: Ompl path for ros wrapper.
+ompl::geometric::PathGeometric OmplPlanner::getOmplPath() const{
+    return *interpolatedPath_;
+}
 void OmplPlanner::getOmplPath(ompl::geometric::PathGeometric* omplPath) const {
   if (path_ == nullptr) {
     throw std::runtime_error("Ompl planner: path_ is nullptr");
@@ -103,9 +109,20 @@ ompl::geometric::PathGeometric interpolatePath(const ompl::geometric::PathGeomet
   if (currentNumPoints > desiredNumPoints) {
     std::cerr << "Interpolated path would have less points than the non-interpolated one, returning the original path." << std::endl;
   }
-  const unsigned int numPoints = std::max(currentNumPoints, desiredNumPoints);
+  unsigned int numPoints = std::max(currentNumPoints, desiredNumPoints);
   interpolatedPath.interpolate(numPoints);
   return interpolatedPath;
+}
+
+ompl::base::OptimizationObjectivePtr getPathLengthObjective(const ompl::base::SpaceInformationPtr& si) {
+    ompl::base::OptimizationObjectivePtr obj (new ompl::base::PathLengthOptimizationObjective(si));
+    obj->setCostThreshold(ompl::base::Cost(0.60));
+    return obj;
+}
+ompl::base::OptimizationObjectivePtr getMotionCostIntegralObjective(const ompl::base::SpaceInformationPtr& si, bool enableMotionCostInterpolation)
+{
+    ROS_INFO("Return motion cost");
+    return std::make_shared<ompl::base::motionCostIntegralObjective>(si, enableMotionCostInterpolation);
 }
 
 } /*namespace se2_planning */

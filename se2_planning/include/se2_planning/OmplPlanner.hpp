@@ -10,6 +10,9 @@
 #include "ompl/base/SpaceInformation.h"
 #include "ompl/geometric/SimpleSetup.h"
 #include "se2_planning/Planner.hpp"
+#include "ompl/base/OptimizationObjective.h"
+#include "ompl/base/objectives/PathLengthOptimizationObjective.h"
+#include "se2_planning/MotionCostIntegralObjective.hpp"
 
 namespace se2_planning {
 
@@ -24,15 +27,18 @@ class OmplPlanner : public Planner {
   void setStartingState(const State& startingState) final;
   void setGoalState(const State& goalState) final;
   void getPath(Path* path) const final;
+  //!Eric_Wang:
+  ompl::geometric::PathGeometric getOmplPath() const final;
 
   void setMaxPlanningDuration(double T);
-  void getOmplPath(ompl::geometric::PathGeometric* omplPath) const;
-  void getOmplInterpolatedPath(ompl::geometric::PathGeometric* omplPath, double spatialResolution) const;
+  void getOmplPath(ompl::geometric::PathGeometric* omplPath) const final;
+  void getOmplInterpolatedPath(ompl::geometric::PathGeometric* omplPath, double spatialResolution) const final;
   void getInterpolatedPath(Path* interpolatedPath, double spatialResolution) const;
   void getOmplInterpolatedPath(ompl::geometric::PathGeometric* omplPath, unsigned int numPoints) const;
   void getInterpolatedPath(Path* interpolatedPath, unsigned int numPoints) const;
   ompl::geometric::SimpleSetupPtr getSimpleSetup() const;
   void setOmplPlanner(ompl::base::PlannerPtr planner);
+
 
  protected:
   virtual void initializeStateSpace() = 0;
@@ -47,8 +53,12 @@ class OmplPlanner : public Planner {
 
  private:
   double maxPlanningDuration_ = 1.0;
+
 };
 
 ompl::geometric::PathGeometric interpolatePath(const ompl::geometric::PathGeometric& inputPath, double desiredResolution);
 ompl::geometric::PathGeometric interpolatePath(const ompl::geometric::PathGeometric& inputPath, unsigned int desiredNumPoints);
+// Strive4G8ness: define optimazation function.
+ompl::base::OptimizationObjectivePtr getPathLengthObjective(const ompl::base::SpaceInformationPtr& si);
+ompl::base::OptimizationObjectivePtr getMotionCostIntegralObjective(const ompl::base::SpaceInformationPtr& si, bool enableMotionCostInterpolation);
 }  // namespace se2_planning

@@ -78,7 +78,16 @@ add_executable(se2_planner_node
   src/se2_planner_node.cpp
 )
 
+add_executable(map_fusion_node
+    src/map_fusion_node.cpp
+    )
+
 target_link_libraries(se2_planner_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(map_fusion_node
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )

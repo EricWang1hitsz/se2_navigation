@@ -13,10 +13,16 @@ set(SRC_FILES
   src/OmplReedsSheppPlanner.cpp
   src/State.cpp
   src/StateValidator.cpp
+  src/MotionCostIntegralObjective.cpp
+  src/UpdateMapFusion.cpp
 )
 
 set(CATKIN_PACKAGE_DEPENDENCIES
-  grid_map_core 
+  grid_map_core
+  grid_map_msgs
+  grid_map_ros
+  roscpp
+  se2_navigation_msgs
 )
 
 find_package(catkin REQUIRED

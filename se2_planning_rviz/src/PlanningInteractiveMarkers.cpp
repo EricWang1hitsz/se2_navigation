@@ -43,7 +43,8 @@ PlanningInteractiveMarkers::PlanningInteractiveMarkers(const ros::NodeHandle& nh
                                                        const std::string &ns)
     : nh_(nh),
       marker_server_(ns),
-      frame_id_("map"),
+      //frame_id_("map"),
+      frame_id_("odom"),
       initialized_(false)
 {
 }

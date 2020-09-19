@@ -10,6 +10,9 @@
 #include <nav_msgs/Path.h>
 #include <tf/transform_datatypes.h>
 #include <thread>
+#include <ompl/base/spaces/SE2StateSpace.h>
+
+namespace ob = ompl::base;
 
 namespace se2_planning {
 
@@ -33,6 +36,7 @@ bool OmplReedsSheppPlannerRos::plan() {
   std::thread t([this]() {
     publishPath();
     publishPathNavMsgs();
+    publishOmplPathNavMsgs();
   });
   t.detach();
   return result;
@@ -54,6 +58,7 @@ void OmplReedsSheppPlannerRos::initRos() {
   pathNavMsgsPublisher_ = nh_->advertise<nav_msgs::Path>(parameters_.pathNavMsgTopic_, 1, true);
   planningService_ = nh_->advertiseService(parameters_.planningSerivceName_, &OmplReedsSheppPlannerRos::planningService, this);
   pathPublisher_ = nh_->advertise<se2_navigation_msgs::PathMsg>(parameters_.pathMsgTopic_, 1);
+  omplPathNavMsgsPublisher_ = nh_->advertise<nav_msgs::Path>("omplPathNavMsgs", 1, true);
 }
 
 void OmplReedsSheppPlannerRos::publishPathNavMsgs() const {
@@ -69,13 +74,43 @@ void OmplReedsSheppPlannerRos::publishPathNavMsgs() const {
 
 void OmplReedsSheppPlannerRos::publishPath() const {
   ReedsSheppPath rsPath;
-  planner_->getPath(&rsPath);
+  planner_->getPath(&rsPath); //reeds shepp path.
   se2_navigation_msgs::Path msg = se2_planning::convert(rsPath);
   msg.header_.frame_id = parameters_.pathFrame_;
   msg.header_.stamp = ros::Time::now();
   msg.header_.seq = planSeqNumber_;
   pathPublisher_.publish(se2_navigation_msgs::convert(msg));
   ROS_INFO_STREAM("Publishing ReedsShepp path, num states: " << rsPath.numPoints());
+}
+
+void OmplReedsSheppPlannerRos::publishOmplPathNavMsgs() const{
+    auto Path = planner_->getOmplPath();
+    ompl::geometric::PathGeometric *omplPath(&Path);
+    planner_->getOmplInterpolatedPath(omplPath, parameters_.pathNavMsgResolution_);
+    nav_msgs::Path msg;
+    msg.header.stamp = ros::Time::now();
+    msg.header.frame_id = parameters_.pathFrame_;
+    msg.header.seq = planSeqNumber_;
+    geometry_msgs::PoseStamped pose;
+
+    for(std::size_t path_idx = 0; path_idx < omplPath->getStateCount(); path_idx++)
+    {
+        const ob::SE2StateSpace::StateType *se2state = omplPath->getState(path_idx)->as<ob::SE2StateSpace::StateType>();
+        const ob::RealVectorStateSpace::StateType *pos = se2state->as<ob::RealVectorStateSpace::StateType>(0);
+        pose.pose.position.x = pos->values[0];
+        pose.pose.position.y = pos->values[1];
+        pose.pose.position.z = 0.2;
+        double yaw = pos->values[2];
+        // Creat quaternion from yaw;
+        geometry_msgs::Quaternion quat = tf::createQuaternionMsgFromYaw(yaw);
+        pose.pose.orientation.x = quat.x;
+        pose.pose.orientation.y = quat.y;
+        pose.pose.orientation.z = quat.z;
+        pose.pose.orientation.w = quat.w;
+        msg.poses.push_back(pose);
+        omplPathNavMsgsPublisher_.publish(msg);
+    }
+    ROS_INFO_STREAM("Publishing Ompl path nav msg, num states: " << msg.poses.size());
 }
 
 geometry_msgs::Pose convert(const ReedsSheppState& state, double z) {

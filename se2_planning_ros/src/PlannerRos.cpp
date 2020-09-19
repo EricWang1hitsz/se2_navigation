@@ -31,6 +31,16 @@ bool PlannerRos::plan() {
 void PlannerRos::getPath(Path* path) const {
   planner_->getPath(path);
 }
+// Strive4G8ness: get ompl path , not rs path.
+ompl::geometric::PathGeometric PlannerRos::getOmplPath() const{
+    return planner_->getOmplPath();
+}
+void PlannerRos::getOmplPath(ompl::geometric::PathGeometric *omplPath) const{
+    planner_->getOmplPath(omplPath);
+}
+void PlannerRos::getOmplInterpolatedPath(ompl::geometric::PathGeometric *omplPath, double spatialResolution) const{
+    planner_->getOmplInterpolatedPath(omplPath, spatialResolution);
+}
 bool PlannerRos::reset() {
   return planner_->reset();
 }
