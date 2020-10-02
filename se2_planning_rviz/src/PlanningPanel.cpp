@@ -90,7 +90,6 @@ PlanningPanel::PlanningPanel(QWidget* parent)
 {
 
   createLayout();
-
 }
 
 void PlanningPanel::onInitialize()

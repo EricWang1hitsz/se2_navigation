@@ -47,7 +47,7 @@ bool SE2stateValidator::isStateValid(const State& state) const {
       float currentPositionIsTraversale = traversability_map_update_.at("traversability", *iterator);
       if(!traversability_map_update_.isValid(*iterator, "traversability"))
           ROS_WARN("Invalid data in traversability map");
-      if(currentPositionIsTraversale > 0.50){
+      if(currentPositionIsTraversale > 0.45){ // 0.45 is best.
           nCells++;
           traversability += traversability_map_update_.at("traversability", *iterator);
       }
@@ -58,7 +58,7 @@ bool SE2stateValidator::isStateValid(const State& state) const {
   }
   traversability /= nCells;
   //ROS_WARN_STREAM("traversability is: " << traversability);
-  if(traversability > 0.7)
+  if(traversability > 0.65) // 0.65 is best.
       return true;
   else
       return false;

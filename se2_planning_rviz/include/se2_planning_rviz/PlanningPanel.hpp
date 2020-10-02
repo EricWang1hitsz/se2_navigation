@@ -48,6 +48,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "se2_planning_rviz/PlanningInteractiveMarkers.hpp"
 #include "se2_planning_rviz/EditButton.hpp"
 #include <QCheckBox>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #endif
 
 #include <string>

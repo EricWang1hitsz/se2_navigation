@@ -12,15 +12,15 @@ planner_ros:
   path_msg_topic: ompl_rs_planner_ros/nav_msgs_path
   # path_frame: map
   path_frame: odom
-  nav_msg_path_spatial_resolution: 1.0
+  nav_msg_path_spatial_resolution: 1.5
 
 planner:
-  path_spatial_resolution: 0.5
+  path_spatial_resolution: 1.5
   ompl_planner: RRTstar # see ompl_planner_creators.hpp for list of available planners
   max_planning_time: 60
 
 ompl_planners:
   rrt_star:
-    planner_range: 0.2
+    planner_range: 1.5
   rrt_sharp:
     planner_range: 15.0

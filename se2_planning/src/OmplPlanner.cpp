@@ -43,6 +43,7 @@ bool OmplPlanner::plan() {
   const ompl::geometric::PathGeometric solution = simpleSetup_->getSolutionPath();
   *path_ = solution; // PathGeometric so far.
   *interpolatedPath_ = solution; // Not interpolate so far.
+  ROS_INFO_STREAM("Path length is  " << solution.length() << " ." <<std::endl);
   // std::cout << "Solution plan has: " << solution.getStateCount() << " states." << std::endl;
 
   return true;
